@@ -1,6 +1,12 @@
 # bibilitomail071301
 一个bilibili动态直播推送至邮箱的简单实现
 
+# 环境安装
+
+'''
+pip install bilibili-api-python aiosqlite structlog loguru aiosmtplib
+'''
+
 # License
 
 This project includes and depends on the following open‑source libraries:
