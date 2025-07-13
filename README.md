@@ -3,9 +3,10 @@
 
 # 环境安装
 
-'''
+```shell
 pip install bilibili-api-python aiosqlite structlog loguru aiosmtplib
-'''
+```
+
 
 # License
 
