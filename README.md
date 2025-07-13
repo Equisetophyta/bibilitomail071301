@@ -1,0 +1,2 @@
+# bibilitomail071301
+一个bilibili动态直播推送至邮箱的简单实现
