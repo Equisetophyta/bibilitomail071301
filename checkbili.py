@@ -98,7 +98,7 @@ async def check_live_status(room_id: int):
     room = live.LiveRoom(room_id)
     try:
         info = await room.get_room_info()
-        live_status = info["room_info"]["live_status"]  # 1: 直播中, 0: 未开播
+        live_status = info["room_info"]["live_status"]  # 0: 未开播, 1: 直播中, 2: 稿件轮播
 
         cursor.execute("SELECT live_status FROM lives WHERE room_id=?", (room_id,))
         row = cursor.fetchone()
@@ -109,23 +109,30 @@ async def check_live_status(room_id: int):
             logging.info(f"[直播] Room {room_id} 首次记录状态：{live_status}")
             return
 
-        if live_status == 1 and row[0] == 0:
+        previous_status = row[0]
+
+        # 开播：非1 → 1
+        if previous_status != 1 and live_status == 1:
             uname = info["anchor_info"]["base_info"]["uname"]
             url = f"https://live.bilibili.com/{room_id}"
             content = f"直播间：{uname}\n链接：{url}\n状态：直播开始"
             send_email(f"[B站开播提醒] Room:{room_id}", content)
-            cursor.execute("UPDATE lives SET live_status=? WHERE room_id=?", (live_status, room_id))
-            conn.commit()
-        elif live_status == 0 and row[0] == 1:
-            # 下播时发送邮件
+            logging.info(f"[直播] Room {room_id} 检测到开播")
+
+        # 下播：1 → 非1
+        elif previous_status == 1 and live_status != 1:
             uname = info["anchor_info"]["base_info"]["uname"]
             url = f"https://live.bilibili.com/{room_id}"
             content = f"直播间：{uname}\n链接：{url}\n状态：直播结束"
             send_email(f"[B站下播提醒] Room:{room_id}", content)
-            cursor.execute("UPDATE lives SET live_status=? WHERE room_id=?", (live_status, room_id))
-            conn.commit()
+            logging.info(f"[直播] Room {room_id} 检测到下播")
         else:
             logging.info(f"[直播] Room {room_id} 状态无变化：{live_status}")
+
+        # 更新数据库
+        cursor.execute("UPDATE lives SET live_status=? WHERE room_id=?", (live_status, room_id))
+        conn.commit()
+
     except Exception as e:
         logging.error(f"[直播] Room {room_id} 获取信息失败: {e}")
 
